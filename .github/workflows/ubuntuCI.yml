@@ -4,10 +4,7 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    runs-on: ubuntu-latest
     steps:
       - name: Switch autocrlf
         run: git config --global core.autocrlf input
@@ -21,10 +18,10 @@ jobs:
           dotnet-version: '5.0.x'
 
       - name: Nuget restore
-        run: for (f in $(find . -name "*.sln")); do nuget restore $f; done
+        run: for f in $(find . -name "*.sln"); do nuget restore $f; done
 
       - name: Build with dotnet
-        run: for (f in $(find . -name "*.sln")); do dotnet build $f; done
+        run: for f in $(find . -name "*.sln"); do dotnet build $f; done
 
       - name: Run unit tests
-        run: for (f in $(find . -name "*.sln")); do dotnet test $f; done
+        run: for f in $(find . -name "*.sln"); do dotnet test $f; done
