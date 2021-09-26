@@ -21,10 +21,10 @@ jobs:
           dotnet-version: '5.0.x'
 
       - name: Nuget restore
-        run: for f in $(find . -name "*.sln"); do nuget restore $f; done
+        run: for (f in $(find . -name "*.sln")); do nuget restore $f; done
 
       - name: Build with dotnet
-        run: for f in $(find . -name "*.sln"); do dotnet build $f; done
+        run: for (f in $(find . -name "*.sln")); do dotnet build $f; done
 
       - name: Run unit tests
-        run: for f in $(find . -name "*.sln"); do dotnet test $f; done
+        run: for (f in $(find . -name "*.sln")); do dotnet test $f; done
