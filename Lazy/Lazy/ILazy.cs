@@ -1,14 +1,13 @@
-﻿namespace Lazy
+﻿namespace Lazy;
+
+/// <summary>
+/// Lazy evaluation structure
+/// </summary>
+public interface ILazy<out T>
 {
     /// <summary>
-    /// Lazy evaluation structure
+    /// Gets calculated value 
     /// </summary>
-    public interface ILazy<out T>
-    {
-        /// <summary>
-        /// Gets calculated value 
-        /// </summary>
-        /// <returns>Returns generic type T</returns>
-        public T Get();
-    }
+    /// <returns>Type of returning object</returns>
+    public T Get();
 }

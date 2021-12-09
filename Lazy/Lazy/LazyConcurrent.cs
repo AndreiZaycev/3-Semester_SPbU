@@ -1,42 +1,41 @@
 ﻿using System;
 using System.Threading;
 
-namespace Lazy
+namespace Lazy;
+
+/// <summary>
+/// Concurrent implementation of ILazy interface
+/// </summary>
+/// <typeparam name="T">Generic type of returning instance</typeparam>
+public class LazyConcurrent<T> : Lazy<T>
 {
-    /// <summary>
-    /// Concurrent implementation of ILazy interface
-    /// </summary>
-    /// <typeparam name="T">Generic type of returning instance</typeparam>
-    public class LazyConcurrent<T> : Lazy<T>
+    private readonly object _lock = new();
+
+    /// <inheritdoc/>
+    public LazyConcurrent(Func<T> func)
+        : base(func)
     {
-        private readonly object _lock = new();
+    }
 
-        /// <inheritdoc/>
-        public LazyConcurrent(Func<T> func)
-            : base(func)
+    /// <inheritdoc/>
+    public override T Get()
+    {
+        if (isComputed)
         {
+            return result;
         }
 
-        /// <inheritdoc/>
-        public override T Get()
+        lock (_lock)
         {
-            if (IsComputed)
+            if (isComputed)
             {
-                return Result;
+                return result;
             }
-
-            lock (_lock)
-            {
-                if (Volatile.Read(ref IsComputed))
-                {
-                    return Result;
-                }
-
-                Result = Function();
-                Function = null;
-                IsComputed = true;
-                return Result;
-            }
+            result = function();
+            function = null;
+            isComputed = true;
         }
+
+        return result;
     }
 }
