@@ -49,7 +49,7 @@ public class Tests
         var actual = await _client.Get(filePath, pathToDownload);
         FileAssert.AreEqual(filePath, pathToDownload);
         File.Delete(pathToDownload);
-        Assert.AreEqual(6, actual);
+        Assert.AreEqual(5, actual);
     }
 
     [Test]
