@@ -44,12 +44,12 @@ public class Tests
     [Test]
     public async Task GetShouldReturnRightSizeAndDownloadFile()
     {
-        var filePath = Path.Join(_path, "test1.txt");
+        var filePath = Path.Join(Path.Join(_path, "Test"), "test2.txt");
         var pathToDownload = Path.Join(Path.Join(_path, "Test"), "test3.txt");
         var actual = await _client.Get(filePath, pathToDownload);
         FileAssert.AreEqual(filePath, pathToDownload);
         File.Delete(pathToDownload);
-        Assert.AreEqual(13, actual);
+        Assert.AreEqual(6, actual);
     }
 
     [Test]
