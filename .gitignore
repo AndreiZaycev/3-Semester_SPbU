@@ -122,6 +122,8 @@ $tf/
 # Guidance Automation Toolkit
 *.gpState
 
+
+
 # ReSharper is a .NET coding add-in
 _ReSharper*/
 *.[Rr]e[Ss]harper
@@ -149,6 +151,8 @@ nCrunchTemp_*
 # MightyMoose
 *.mm.*
 AutoTest.Net/
+
+.idea/
 
 # Web workbench (sass)
 .sass-cache/
