@@ -8,6 +8,7 @@ namespace Lazy;
 /// <typeparam name="T">Generic type of returning instance</typeparam>
 public class LazyEvaluation<T> : Lazy<T>
 {
+    private bool isComputed;
     /// <inheritdoc/>
     public LazyEvaluation(Func<T> func)
         : base(func)

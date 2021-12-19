@@ -10,6 +10,7 @@ namespace Lazy;
 public class LazyConcurrent<T> : Lazy<T>
 {
     private readonly object _lock = new();
+    private volatile bool isComputed;
 
     /// <inheritdoc/>
     public LazyConcurrent(Func<T> func)
