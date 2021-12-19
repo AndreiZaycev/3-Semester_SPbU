@@ -31,6 +31,7 @@ public class Tests
         var expected = new[]
         {
             ($"{_path}/Test", true),
+            ($"{_path}/test3.txt", false),
             ($"{_path}/test1.txt", false)
         };
 
