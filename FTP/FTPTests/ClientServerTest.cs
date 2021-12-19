@@ -27,7 +27,7 @@ public class Tests
     public async Task ListShouldReturnRightSizeAndItems()
     {
         var actual = await _client.List(_path);
-        Assert.AreEqual(2, actual.Count);
+        Assert.AreEqual(3, actual.Count);
         var expected = new[]
         {
             ($"{_path}//Test", true),
