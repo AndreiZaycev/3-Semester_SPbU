@@ -9,7 +9,7 @@ public abstract class Lazy<T> : ILazy<T>
 {
     protected Func<T> function;
     protected T result;
-    protected bool isComputed;
+    protected volatile bool isComputed;
 
     /// <summary>
     /// Creates a new Lazy with a specific function

@@ -24,8 +24,8 @@ public class Tests
     {
             int iterator = 3;
             int counter = 3;
-            yield return new TestCaseData(LazyFactory.CreateLazyConcurrent(() => ++iterator));
-            yield return new TestCaseData(LazyFactory.CreateLazyEvaluation(() => Interlocked.Increment(ref counter)));
+            yield return new TestCaseData(LazyFactory.CreateLazyConcurrent(() => Interlocked.Increment(ref counter)));
+            yield return new TestCaseData(LazyFactory.CreateLazyEvaluation(() => ++iterator));
     }
 
     [TestCaseSource(nameof(LazyData))]
