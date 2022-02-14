@@ -6,11 +6,11 @@
 [AttributeUsage(AttributeTargets.Method)]
 public class Test : Attribute
 {
-    public Test(Type expected = null, string ignore = null)
+    public Test(Type? expected = null, string? ignore = null)
     {
         Expected = expected;
         Ignore = ignore;
     }
-    public Type Expected { get; }
-    public string Ignore { get; set; }
+    public Type? Expected { get; }
+    public string? Ignore { get; set; }
 }

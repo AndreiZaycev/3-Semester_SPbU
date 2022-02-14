@@ -13,7 +13,7 @@ public class TestInformation
     /// <summary>
     /// Reason for ignoring test
     /// </summary>
-    public string IgnoreReason { get; }
+    public string? IgnoreReason { get; }
 
     /// <summary>
     /// Running time of test
@@ -28,9 +28,9 @@ public class TestInformation
     /// <summary>
     /// Error message of the test
     /// </summary>
-    public string ErrorMessage { get; }
+    public string? ErrorMessage { get; }
 
-    public TestInformation(string name, string result, string ignore = null, string errorMessage = null, long time = 0)
+    public TestInformation(string name, string result, string? ignore = null, string? errorMessage = null, long time = 0)
     {
         Name = name;
         Result = result;

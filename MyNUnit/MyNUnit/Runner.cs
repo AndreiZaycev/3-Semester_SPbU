@@ -17,7 +17,7 @@ public static class Runner
     /// <summary>
     /// Collection with the information about tests
     /// </summary>
-    public static BlockingCollection<TestInformation> TestInformation { get; private set; }
+    public static BlockingCollection<TestInformation>? TestInformation { get; private set; }
 
     private enum TestStatus
     {
@@ -62,7 +62,7 @@ public static class Runner
         }
 
         if (errorMessage == "") return false;
-        TestInformation.Add(new TestInformation(methodInfo.Name, TestStatus.Errored.ToString(), null,
+        TestInformation?.Add(new TestInformation(methodInfo.Name, TestStatus.Errored.ToString(), null,
             errorMessage));
         return true;
     }
@@ -76,20 +76,20 @@ public static class Runner
 
         var attributes = Attribute.GetCustomAttribute(methodInfo, typeof(Test)) as Test;
 
-        if (attributes.Ignore != null)
+        if (attributes?.Ignore != null)
         {
-            TestInformation.Add(new TestInformation(methodInfo.Name, TestStatus.Ignored.ToString(), attributes.Ignore));
+            TestInformation?.Add(new TestInformation(methodInfo.Name, TestStatus.Ignored.ToString(), attributes.Ignore));
             return;
         }
 
-        var instance = Activator.CreateInstance(methodInfo.DeclaringType.BaseType);
+        var instance = Activator.CreateInstance(methodInfo.DeclaringType?.BaseType!);
 
-        RunMethodsWithAttribute<Before>(methodInfo.DeclaringType, instance);
+        RunMethodsWithAttribute<Before>(methodInfo.DeclaringType!, instance);
 
         var timer = Stopwatch.StartNew();
         TestInformation testInformation;
 
-        void getInformation(bool expression)
+        void GetInformation(bool expression)
         {
             if (expression)
             {
@@ -107,20 +107,20 @@ public static class Runner
         {
             methodInfo.Invoke(instance, null);
             timer.Stop();
-            getInformation(attributes.Expected != null);
+            GetInformation(attributes?.Expected != null);
         }
         catch (Exception exception)
         {
             timer.Stop();
-            getInformation(attributes.Expected != exception.InnerException.GetType());
+            GetInformation(attributes?.Expected != exception.InnerException?.GetType());
         }
 
-        RunMethodsWithAttribute<After>(methodInfo.DeclaringType, instance);
+        RunMethodsWithAttribute<After>(methodInfo.DeclaringType!, instance);
 
-        TestInformation.Add(testInformation);
+        TestInformation?.Add(testInformation);
     }
 
-    private static void RunMethodsWithAttribute<T>(Type type, object instance = null)
+    private static void RunMethodsWithAttribute<T>(Type type, object? instance = null)
     {
         var methodsWithAttribute = type
             .GetTypeInfo()
