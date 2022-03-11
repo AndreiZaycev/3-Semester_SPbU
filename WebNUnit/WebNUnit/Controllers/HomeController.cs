@@ -95,7 +95,6 @@ namespace WebNUnit.Controllers
                              IgnoreReason = item.IgnoreReason ?? "there is no reason for ignoring"
                          }))
                 {
-                    //Console.Write(test.Name, test.Result);
                     assembly.Tests.Add(test);
                 }
                 assembly.Name = orderedNames[i][(path.Length + 1)..orderedNames[i].Length];
@@ -142,6 +141,10 @@ namespace WebNUnit.Controllers
             return View("History", assemblies);
         }
 
+        /// <summary>
+        /// Error View 
+        /// </summary>
+        /// <returns>view</returns>
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
