@@ -1,0 +1,25 @@
+﻿@model string[]
+
+<form asp-controller="Home" asp-action="LoadAssembly" type="submit" method="post" enctype="multipart/form-data">
+    <input accept=".dll" type="file" name="file" id="1" onchange="document.getElementById('1').submit();"/>
+    <input type="submit" value="Upload" />
+</form>
+<form asp-controller="Home" asp-action="Run">
+    <p>
+        <input type="submit" value="Run tests" />
+    </p>
+</form>
+<form asp-controller="Home" asp-action="Delete">
+    <p>
+        <input type="submit" value="Delete all dll" />
+    </p>
+</form>
+<h6>Current .dll pool:</h6>
+<ul>
+    @foreach (var item in Model)
+    {
+        <li>
+            @item
+        </li>
+    }
+</ul>
