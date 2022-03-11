@@ -6,16 +6,6 @@ internal static class Program
     {
         try
         {
-            Runner.Run("C:\\Users\\Андрей\\Desktop\\4Sem\\WebNUnit\\WebNUnit\\Tests");
-            Console.Write("aue");
-        }
-        catch (Exception ex)
-        {
-            Console.Write("beb");
-        }
-
-        try
-        {
             Console.WriteLine("Start testing...");
             Runner.Run(args[0]);
             foreach (var test in Runner.TestInformation!)
