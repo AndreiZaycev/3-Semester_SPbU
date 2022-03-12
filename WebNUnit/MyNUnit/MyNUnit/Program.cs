@@ -7,21 +7,28 @@ internal static class Program
         try
         {
             Console.WriteLine("Start testing...");
-            Runner.Run(args[0]);
-            foreach (var test in Runner.TestInformation!)
+            if (args.Length != 1)
             {
-                var message = test.Result switch
-                {
-                    "Errored" => $"{test.Name} errored with the message: {test.ErrorMessage}",
-                    "Ignored" => $"{test.Name} ignored with the ignore reason: {test.IgnoreReason}",
-                    "Passed" => $"{test.Name} passed in {test.Time} seconds",
-                    "Failed" => $"{test.Name} failed",
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-                Console.WriteLine(message);
+                Console.WriteLine("Expected 1 argument -- path to .dll file");
             }
+            else
+            {
+                Runner.Run(args[0]);
+                foreach (var test in Runner.TestInformation!)
+                {
+                    var message = test.Result switch
+                    {
+                        "Errored" => $"{test.Name} errored with the message: {test.ErrorMessage}",
+                        "Ignored" => $"{test.Name} ignored with the ignore reason: {test.IgnoreReason}",
+                        "Passed" => $"{test.Name} passed in {test.Time} seconds",
+                        "Failed" => $"{test.Name} failed",
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+                    Console.WriteLine(message);
+                }
 
-            Console.WriteLine("Testing is over");
+                Console.WriteLine("Testing is over");
+            }
         }
         catch (DirectoryNotFoundException)
         {

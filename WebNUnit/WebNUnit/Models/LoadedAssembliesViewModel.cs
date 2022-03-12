@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.EntityFrameworkCore;
+﻿namespace WebNUnit.Models;
+using System.ComponentModel.DataAnnotations;
 
-namespace WebNUnit.Models;
-
+/// <summary>
+/// Implementation of loaded assemblies view model 
+/// </summary>
 public class LoadedAssembliesViewModel
 {
     /// <summary>
@@ -14,11 +15,10 @@ public class LoadedAssembliesViewModel
     /// <summary>
     /// Name of assembly
     /// </summary>
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     /// <summary>
     /// Tests 
     /// </summary>
-    public List<TestViewModel> Tests { get; set; } = new();
-
+    public List<TestViewModel> Tests { get; } = new();
 }

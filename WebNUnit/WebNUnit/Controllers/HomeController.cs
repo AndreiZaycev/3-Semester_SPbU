@@ -1,12 +1,11 @@
-﻿using System.Diagnostics;
+﻿namespace WebNUnit.Controllers;
+using System.Diagnostics;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyNUnit;
-using WebNUnit.Models;
-using WebNUnit.TestingContext;
-
-namespace WebNUnit.Controllers;
+using Models;
+using TestingContext;
 
 /// <summary>
 /// Implementation of home controller 
@@ -14,8 +13,8 @@ namespace WebNUnit.Controllers;
 public class HomeController : Controller
 {
     private TestContext testContext;
-    private static string dir = Directory.GetCurrentDirectory();
-    private string path = dir + "\\Testings";
+    private static readonly string dir = Directory.GetCurrentDirectory();
+    private readonly string path = dir + "\\Testings";
 
     public HomeController()
     {
@@ -36,6 +35,11 @@ public class HomeController : Controller
         return View("LoadAssemblyPage", GetAllDll());
     }
 
+    public IActionResult LastRunPage()
+    {
+        return View("LastRun", new List<LoadedAssembliesViewModel>());
+    }
+
     private string[] GetAllDll()
     {
         var dlls = Directory
@@ -52,7 +56,10 @@ public class HomeController : Controller
     /// <returns>view of loaded assemblies</returns>
     public async Task<IActionResult> LoadAssembly(IFormFile file)
     {
-        if (Directory.GetFiles(path).Contains(Path.Combine(path, file.FileName))) return LoadAssemblyPage();
+        if (Directory.GetFiles(path).Contains(Path.Combine(path, file.FileName)))
+        {
+            return LoadAssemblyPage();
+        }
         await using var fileStream = new FileStream(Path.Combine(path, file.FileName), FileMode.CreateNew);
         await file.CopyToAsync(fileStream);
         return LoadAssemblyPage();
@@ -69,6 +76,8 @@ public class HomeController : Controller
         var types = orderedNames
             .Select(Assembly.LoadFrom)
             .SelectMany(a => a.ExportedTypes);
+
+        var lastRunAssemblies = new List<LoadedAssembliesViewModel>();
 
         Runner.Run(path);
 
@@ -100,11 +109,12 @@ public class HomeController : Controller
 
             assembly.Name = orderedNames[i][(path.Length + 1)..orderedNames[i].Length];
             i++;
-            testContext.AssembliesHistory.Add(assembly);
+            lastRunAssemblies.Add(assembly);
+            testContext.AssembliesHistory?.Add(assembly);
         }
 
         await testContext.SaveChangesAsync();
-        return View("LoadAssemblyPage", GetAllDll());
+        return View("LastRun", lastRunAssemblies);
     }
 
     /// <summary>
@@ -114,15 +124,7 @@ public class HomeController : Controller
     {
         foreach (var file in new DirectoryInfo(path).GetFiles())
         {
-            try
-            {
-                file.Delete();
-            }
-            // заглушка для падающей дллки
-            catch (Exception exception)
-            {
-                Console.Write(exception.Message);
-            }
+            file.Delete();
         }
 
         return View("LoadAssemblyPage", GetAllDll());
@@ -134,7 +136,7 @@ public class HomeController : Controller
     /// <returns>history view</returns>
     public IActionResult History()
     {
-        var assemblies = testContext.AssembliesHistory
+        var assemblies = testContext.AssembliesHistory?
             .Include(x => x.Tests)
             .ToList()
             .Reverse<LoadedAssembliesViewModel>();

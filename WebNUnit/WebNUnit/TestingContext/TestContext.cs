@@ -1,15 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
-using WebNUnit.Models;
+﻿namespace WebNUnit.TestingContext;
+using Microsoft.EntityFrameworkCore;
+using Models;
 
-namespace WebNUnit.TestingContext;
-
+/// <summary>
+/// Implementation of test context 
+/// </summary>
 [Keyless]
 public class TestContext: DbContext
 {
     /// <summary>
     /// History DbSet
     /// </summary>
-    public DbSet<LoadedAssembliesViewModel> AssembliesHistory { get; set; }
+    public DbSet<LoadedAssembliesViewModel>? AssembliesHistory { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

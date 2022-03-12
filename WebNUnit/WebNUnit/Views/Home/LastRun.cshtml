@@ -1,0 +1,38 @@
+﻿@using System.Linq
+@model IEnumerable<LoadedAssembliesViewModel>
+
+@if (Model.LongCount() == 0)
+{
+    <h1>There is no tests runned</h1>
+}
+@foreach (var assembly in Model)
+{
+    <h1>@assembly.Name
+        <tr>
+            <th>Passed: @assembly.Tests.Count(item => item.Result == "Passed")</th>
+            <th>Failed: @assembly.Tests.Count(item => item.Result == "Failed")</th>
+            <th>Ignored: @assembly.Tests.Count(item => item.Result == "Ignored")</th>
+        </tr>
+    </h1>
+    <table class="table">
+        <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Execution time</th>
+            <th>Ignore reason</th>
+            <th>Launch time</th>
+        </tr>
+        <tbody>
+        @foreach (var item in assembly.Tests)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>@item.Result</td>
+                <td>@item.Time</td>
+                <td>@item.IgnoreReason</td>
+                <td>@item.StartTime</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

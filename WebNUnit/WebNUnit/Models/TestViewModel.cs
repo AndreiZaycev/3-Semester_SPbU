@@ -1,7 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿namespace WebNUnit.Models;
+using System.ComponentModel.DataAnnotations;
 
-namespace WebNUnit.Models;
-
+/// <summary>
+/// Implementation of test view model
+/// </summary>
 public class TestViewModel
 {
     /// <summary>
@@ -13,17 +15,17 @@ public class TestViewModel
     /// <summary>
     /// Test name
     /// </summary>
-    public string Name { get; init; }
+    public string? Name { get; init; }
 
     /// <summary>
     /// Test result
     /// </summary>
-    public string Result { get; init; }
+    public string? Result { get; init; }
 
     /// <summary>
     /// Ignore reason
     /// </summary>
-    public string IgnoreReason { get; init; }
+    public string? IgnoreReason { get; init; }
 
     /// <summary>
     /// Test runtime
