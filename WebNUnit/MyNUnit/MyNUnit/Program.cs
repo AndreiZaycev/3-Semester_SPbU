@@ -34,9 +34,5 @@ internal static class Program
         {
             Console.WriteLine("Error: Directory not found");
         }
-        catch (Exception exception)
-        {
-            Console.WriteLine(exception.Message);
-        }
     }
 }

@@ -35,6 +35,9 @@ public class HomeController : Controller
         return View("LoadAssemblyPage", GetAllDll());
     }
 
+    /// <summary>
+    /// Last run Page view
+    /// </summary>
     public IActionResult LastRunPage()
     {
         return View("LastRun", new List<LoadedAssembliesViewModel>());
