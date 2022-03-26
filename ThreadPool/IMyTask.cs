@@ -16,7 +16,7 @@ namespace ThreadPool
         /// <summary>
         /// Gets the result of the task
         /// </summary>
-        TResult Result { get; }
+        TResult? Result { get; }
 
         /// <summary>
         /// Adds a new task depends on the other task 

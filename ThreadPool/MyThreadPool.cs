@@ -133,7 +133,7 @@ namespace ThreadPool
             private readonly BlockingCollection<Action> _continuations = new();
             private readonly MyThreadPool _threadPool;
             private Func<TResult>? _supplier;
-            private TResult _result;
+            private TResult? _result;
             private Exception? _isAggregateExceptionThrown;
             private readonly ManualResetEvent _isResultReadyEvent = new(false);
             private readonly object _continuationQueueLocker = new();
@@ -148,7 +148,7 @@ namespace ThreadPool
             }
 
             /// <inheritdoc />
-            public TResult Result
+            public TResult? Result
             {
                 get
                 {
