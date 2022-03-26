@@ -1,11 +1,10 @@
 ﻿using System;
 
-namespace ThreadPool
+namespace ThreadPool;
+
+/// <summary>
+/// Exception when shutdown
+/// </summary>
+public class ThreadPoolShutdownException : Exception
 {
-    /// <summary>
-    /// Exception when shutdown
-    /// </summary>
-    public class ThreadPoolShutdownException : Exception
-    {
-    }
 }
