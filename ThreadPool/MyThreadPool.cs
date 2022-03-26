@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 
@@ -44,6 +45,7 @@ namespace ThreadPool
                 }
 
                 _actions.Add(action);
+                
                 Monitor.Pulse(_actionQueueLocker);
             }
         }
@@ -63,7 +65,7 @@ namespace ThreadPool
                     {
                         while (_actions.Count == 0)
                         {
-                            if (_cancellationTokenSource.IsCancellationRequested)
+                            if (_actions.IsAddingCompleted)
                             {
                                 return;
                             }
@@ -71,6 +73,7 @@ namespace ThreadPool
                             Monitor.Wait(_actionQueueLocker);
                         }
 
+                        
                         task = _actions.Take();
                     }
 
@@ -90,7 +93,7 @@ namespace ThreadPool
         /// <typeparam name="TResult">Type of result</typeparam>
         /// <returns>New task</returns>
         /// <exception cref="ThreadPoolShutdownException">Cancellation was requested</exception>
-        public IMyTask<TResult> Submit<TResult>(Func<TResult> supplier)
+        public IMyTask<TResult> Submit<TResult>(Func<TResult>? supplier)
         {
             if (_cancellationTokenSource.IsCancellationRequested)
             {
@@ -113,7 +116,12 @@ namespace ThreadPool
                 throw new ThreadPoolShutdownException();
             }
 
-            _cancellationTokenSource.Cancel();
+            lock (_actionQueueLocker)
+            {
+                _cancellationTokenSource.Cancel();
+            }
+
+            _actions.CompleteAdding();
         }
 
         /// <summary>
@@ -124,16 +132,16 @@ namespace ThreadPool
         {
             private readonly BlockingCollection<Action> _continuations = new();
             private readonly MyThreadPool _threadPool;
-            private Func<TResult> _supplier;
+            private Func<TResult>? _supplier;
             private TResult _result;
-            private (bool, Exception) _isAggregateExceptionThrown;
+            private Exception? _isAggregateExceptionThrown;
             private readonly ManualResetEvent _isResultReadyEvent = new(false);
             private readonly object _continuationQueueLocker = new();
 
             /// <inheritdoc />
             public bool IsCompleted { get; private set; }
 
-            public MyTask(Func<TResult> supplier, MyThreadPool threadPool)
+            public MyTask(Func<TResult>? supplier, MyThreadPool threadPool)
             {
                 _threadPool = threadPool;
                 _supplier = supplier;
@@ -145,15 +153,10 @@ namespace ThreadPool
                 get
                 {
                     _isResultReadyEvent.WaitOne();
-                    if (_threadPool._cancellationTokenSource.IsCancellationRequested)
+                    
+                    if (_isAggregateExceptionThrown != null)
                     {
-                        throw new ThreadPoolShutdownException();
-                    }
-
-                    var (isThrown, exception) = _isAggregateExceptionThrown;
-                    if (isThrown)
-                    {
-                        throw new AggregateException(exception);
+                        throw new AggregateException(_isAggregateExceptionThrown);
                     }
 
                     return _result;
@@ -171,16 +174,17 @@ namespace ThreadPool
                     {
                         if (_threadPool._cancellationTokenSource.IsCancellationRequested)
                         {
-                            return;
+                            throw new ThreadPoolShutdownException();
                         }
                     }
-                    _result = _supplier();
+                    
+                    _result = _supplier!();
                     IsCompleted = true;
                     _supplier = null;
                 }
                 catch (Exception exception)
                 {
-                    _isAggregateExceptionThrown = (true, new AggregateException(exception));
+                    _isAggregateExceptionThrown = new AggregateException(exception);
                 }
                 finally
                 {
@@ -201,28 +205,20 @@ namespace ThreadPool
             /// <inheritdoc/>
             public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> supplier)
             {
-                lock (_threadPool._actionQueueLocker)
+                lock (_continuationQueueLocker)
                 {
-                    if (_threadPool._cancellationTokenSource.IsCancellationRequested)
+                    var task = new MyTask<TNewResult>(() => supplier(Result), _threadPool);
+
+                    if (IsCompleted)
                     {
-                        throw new ThreadPoolShutdownException();
+                        _threadPool.AddAction(task.Run);
+                    }
+                    else
+                    {
+                        _continuations.Add(task.Run);
                     }
 
-                    lock (_continuationQueueLocker)
-                    {
-                        var task = new MyTask<TNewResult>(() => supplier(Result), _threadPool);
-
-                        if (IsCompleted)
-                        {
-                            _threadPool.AddAction(task.Run);
-                        }
-                        else
-                        {
-                            _continuations.Add(task.Run);
-                        }
-
-                        return task;
-                    }
+                    return task;
                 }
             }
         }
