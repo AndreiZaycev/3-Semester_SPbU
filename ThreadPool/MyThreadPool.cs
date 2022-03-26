@@ -174,7 +174,7 @@ public class MyThreadPool
                 {
                     if (_threadPool._cancellationTokenSource.IsCancellationRequested)
                     {
-                        throw new ThreadPoolShutdownException();
+                        return;
                     }
                 }
 
