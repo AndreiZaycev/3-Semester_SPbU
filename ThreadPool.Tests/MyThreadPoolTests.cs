@@ -1,12 +1,16 @@
-﻿using System;
-using NUnit.Framework;
+﻿using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ThreadPool.Tests;
+
+using System;
+using NUnit.Framework;
 
 [TestFixture]
 public class MyThreadPoolTests
 {
-    private const int CountOfTasks = 1000;
+    private const int CountOfTasks = 10;
     private readonly IMyTask<int>[] _tasks = new IMyTask<int>[CountOfTasks];
     private MyThreadPool _threadPool;
 
@@ -18,7 +22,7 @@ public class MyThreadPoolTests
         {
             var index = i;
             _tasks[index] =
-                _threadPool.Submit(() => { return index; });
+                _threadPool.Submit(() => index);
         }
     }
 
@@ -38,7 +42,6 @@ public class MyThreadPoolTests
         var task1 = pool.Submit(() => 0);
         var task2 = task1.ContinueWith(j => 1 / j);
         var task3 = task2.ContinueWith(j => j.ToString());
-
 
         Assert.Throws<AggregateException>(() => _ = task2.Result);
         Assert.Throws<AggregateException>(() => _ = task3.Result);
@@ -64,6 +67,16 @@ public class MyThreadPoolTests
     }
 
     [Test]
+    public void ContinueWithTasksShouldRaiseExceptionAfterShutdown()
+    {
+        _threadPool.Shutdown();
+        for (var i = 0; i < CountOfTasks; i++)
+        {
+            Assert.Throws<ThreadPoolShutdownException>(() => _tasks[i].ContinueWith(_ => 0));
+        }
+    }
+
+    [Test]
     public void ContinueWithShouldCalculateTasks()
     {
         var continueTasks = new IMyTask<int>[CountOfTasks];
@@ -79,7 +92,7 @@ public class MyThreadPoolTests
     }
 
     [Test]
-    public void ContinueWithShouldThrowExceptionAfterShutdown()
+    public void ContinueWithShouldCompleteTheAssignedTasks()
     {
         var continueTasks = new IMyTask<int>[CountOfTasks];
         for (var i = 0; i < CountOfTasks; i++)
@@ -106,5 +119,53 @@ public class MyThreadPoolTests
         {
             var _ = new MyThreadPool(0);
         });
+    }
+
+    [Test]
+    public void MultiThreadingTest()
+    {
+        var anotherPool = new MyThreadPool(CountOfTasks);
+        var array = new int[CountOfTasks];
+
+        Parallel.ForEach(Enumerable.Range(0, CountOfTasks), i =>
+        {
+            var localIndex = i;
+            switch (i)
+            {
+                case 4:
+                    Thread.Sleep(5000);
+                    anotherPool.Shutdown();
+                    break;
+                case < 4:
+                    anotherPool.Submit(() => localIndex)
+                        .ContinueWith(_ =>
+                        {
+                            array[localIndex] = Interlocked.Increment(ref localIndex);
+                            return 1;
+                        });
+                    break;
+                default:
+                    Thread.Sleep(10000);
+                    Assert.Throws<ThreadPoolShutdownException>(() =>
+                    {
+                        anotherPool.Submit(() => localIndex);
+                    });
+                    break;
+            }
+        });
+        
+        Thread.Sleep(5000);
+
+        for (var i = 0; i < 4; ++i)
+        {
+            Assert.AreEqual(i + 1, array[i]);
+        }
+
+        foreach (var item in array)
+        {
+            Console.WriteLine(item);
+        }
+
+        Assert.AreEqual(0, array[4]);
     }
 }

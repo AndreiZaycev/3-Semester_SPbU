@@ -1,6 +1,7 @@
-﻿using System;
+﻿namespace ThreadPool;
 
-namespace ThreadPool;
+#nullable enable
+using System;
 
 /// <summary>
 /// interface describing the task in the thread pool

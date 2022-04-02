@@ -1,9 +1,9 @@
-﻿#nullable enable
+﻿namespace ThreadPool;
+
+#nullable enable
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-
-namespace ThreadPool;
 
 /// <summary>
 /// Implementation of thread pool with executing tasks <see cref="IMyTask{TResult}"/>
@@ -13,6 +13,8 @@ public class MyThreadPool
     private readonly BlockingCollection<Action> _actions = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly object _actionQueueLocker = new();
+    private readonly ManualResetEvent _manualReset = new(false);
+    private readonly Thread[] _threads;
 
     public MyThreadPool(int threadsCount)
     {
@@ -21,12 +23,12 @@ public class MyThreadPool
             throw new ArgumentOutOfRangeException(nameof(threadsCount));
         }
 
-        var threads = new Thread[threadsCount];
+        _threads = new Thread[threadsCount];
 
         for (var i = 0; i < threadsCount; i++)
         {
-            threads[i] = CreateOneThread();
-            threads[i].Start();
+            _threads[i] = CreateOneThread();
+            _threads[i].Start();
         }
     }
 
@@ -37,17 +39,13 @@ public class MyThreadPool
     /// <exception cref="ThreadPoolShutdownException">Cancellation was requested</exception>
     private void AddAction(Action action)
     {
-        lock (_actionQueueLocker)
+        if (_cancellationTokenSource.IsCancellationRequested)
         {
-            if (_cancellationTokenSource.IsCancellationRequested)
-            {
-                throw new ThreadPoolShutdownException();
-            }
-
-            _actions.Add(action);
-
-            Monitor.Pulse(_actionQueueLocker);
+            throw new ThreadPoolShutdownException();
         }
+
+        _actions.Add(action);
+        _manualReset.Set();
     }
 
     /// <summary>
@@ -58,26 +56,17 @@ public class MyThreadPool
     {
         var thread = new Thread(() =>
         {
-            while (true)
+            while (!_cancellationTokenSource.IsCancellationRequested)
             {
-                Action task;
-                lock (_actionQueueLocker)
+                Action? task;
+
+                while (!_actions.TryTake(out task) && !_cancellationTokenSource.IsCancellationRequested)
                 {
-                    while (_actions.Count == 0)
-                    {
-                        if (_actions.IsAddingCompleted)
-                        {
-                            return;
-                        }
-
-                        Monitor.Wait(_actionQueueLocker);
-                    }
-
-
-                    task = _actions.Take();
+                    _manualReset.Reset();
+                    _manualReset.WaitOne();
                 }
 
-                task.Invoke();
+                task?.Invoke();
             }
         })
         {
@@ -93,16 +82,20 @@ public class MyThreadPool
     /// <typeparam name="TResult">Type of result</typeparam>
     /// <returns>New task</returns>
     /// <exception cref="ThreadPoolShutdownException">Cancellation was requested</exception>
-    public IMyTask<TResult> Submit<TResult>(Func<TResult>? supplier)
+    public IMyTask<TResult> Submit<TResult>(Func<TResult> supplier)
     {
-        if (_cancellationTokenSource.IsCancellationRequested)
+        lock (_actionQueueLocker)
         {
-            throw new ThreadPoolShutdownException();
-        }
+            if (_cancellationTokenSource.IsCancellationRequested)
+            {
+                throw new ThreadPoolShutdownException();
+            }
 
-        var task = new MyTask<TResult>(supplier, this);
-        AddAction(task.Run);
-        return task;
+
+            var task = new MyTask<TResult>(supplier, this);
+            AddAction(task.Run);
+            return task;
+        }
     }
 
     /// <summary>
@@ -111,17 +104,21 @@ public class MyThreadPool
     /// <exception cref="ThreadPoolShutdownException">Cancellation already was requested</exception>
     public void Shutdown()
     {
-        if (_cancellationTokenSource.IsCancellationRequested)
-        {
-            throw new ThreadPoolShutdownException();
-        }
-
         lock (_actionQueueLocker)
         {
-            _cancellationTokenSource.Cancel();
-        }
+            if (_cancellationTokenSource.IsCancellationRequested)
+            {
+                throw new ThreadPoolShutdownException();
+            }
 
-        _actions.CompleteAdding();
+            _cancellationTokenSource.Cancel();
+            _manualReset.Set();
+
+            foreach (var thread in _threads)
+            {
+                thread.Join();
+            }
+        }
     }
 
     /// <summary>
@@ -141,7 +138,7 @@ public class MyThreadPool
         /// <inheritdoc />
         public bool IsCompleted { get; private set; }
 
-        public MyTask(Func<TResult>? supplier, MyThreadPool threadPool)
+        public MyTask(Func<TResult> supplier, MyThreadPool threadPool)
         {
             _threadPool = threadPool;
             _supplier = supplier;
@@ -170,14 +167,6 @@ public class MyThreadPool
         {
             try
             {
-                lock (_threadPool._cancellationTokenSource)
-                {
-                    if (_threadPool._cancellationTokenSource.IsCancellationRequested)
-                    {
-                        return;
-                    }
-                }
-
                 _result = _supplier!();
                 IsCompleted = true;
                 _supplier = null;
@@ -186,19 +175,12 @@ public class MyThreadPool
             {
                 _isAggregateExceptionThrown = new AggregateException(exception);
             }
-            finally
+
+            _isResultReadyEvent.Set();
+
+            while (_continuations.Count != 0)
             {
-                _isResultReadyEvent.Set();
-                lock (_continuationQueueLocker)
-                {
-                    while (_continuations.Count != 0)
-                    {
-                        lock (_threadPool._actionQueueLocker)
-                        {
-                            _threadPool._actions.Add(_continuations.Take());
-                        }
-                    }
-                }
+                _threadPool._actions.Add(_continuations.Take());
             }
         }
 
@@ -207,7 +189,12 @@ public class MyThreadPool
         {
             lock (_continuationQueueLocker)
             {
-                var task = new MyTask<TNewResult>(() => supplier(Result), _threadPool);
+                if (_threadPool._cancellationTokenSource.IsCancellationRequested)
+                {
+                    throw new ThreadPoolShutdownException();
+                }
+
+                var task = new MyTask<TNewResult>(() => supplier(Result!), _threadPool);
 
                 if (IsCompleted)
                 {

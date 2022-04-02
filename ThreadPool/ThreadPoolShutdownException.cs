@@ -1,6 +1,6 @@
-﻿using System;
+﻿namespace ThreadPool;
 
-namespace ThreadPool;
+using System;
 
 /// <summary>
 /// Exception when shutdown
