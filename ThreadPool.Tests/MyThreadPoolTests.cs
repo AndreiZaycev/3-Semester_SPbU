@@ -41,8 +41,11 @@ public class MyThreadPoolTests
         var task1 = pool.Submit(() => 0);
         var task2 = task1.ContinueWith(j => 1 / j);
         var task3 = task2.ContinueWith(j => j.ToString());
+        
+        Thread.Sleep(5000);
 
         Assert.Throws<AggregateException>(() => _ = task2.Result);
         Assert.Throws<AggregateException>(() => _ = task3.Result);
     }
+    
 }

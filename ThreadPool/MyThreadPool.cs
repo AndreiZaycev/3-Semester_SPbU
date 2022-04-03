@@ -179,9 +179,7 @@ public class MyThreadPool
 
             while (_continuations.Count != 0)
             {
-                var continuation = _continuations.Take();
-                _threadPool._manualReset.Set();
-                _threadPool._actions.Add(continuation);
+                _threadPool._actions.Add(_continuations.Take());
             }
         }
 
