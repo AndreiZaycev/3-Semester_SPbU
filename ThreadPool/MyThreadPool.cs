@@ -84,7 +84,7 @@ public class MyThreadPool
     /// <exception cref="ThreadPoolShutdownException">Cancellation was requested</exception>
     public IMyTask<TResult> Submit<TResult>(Func<TResult> supplier)
     {
-        lock (_cancellationTokenSource)
+        lock (_actionQueueLocker)
         {
             if (_cancellationTokenSource.IsCancellationRequested)
             {
@@ -186,7 +186,7 @@ public class MyThreadPool
         /// <inheritdoc/>
         public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> supplier)
         {
-            lock (_threadPool._cancellationTokenSource)
+            lock (_threadPool._actionQueueLocker)
             {
                 if (_threadPool._cancellationTokenSource.IsCancellationRequested)
                 {
