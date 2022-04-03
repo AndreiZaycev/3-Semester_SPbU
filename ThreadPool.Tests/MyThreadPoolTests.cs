@@ -25,7 +25,14 @@ public class MyThreadPoolTests
         }
     }
 
-
+    [Test]
+    public void IsCompletedTest()
+    {
+        foreach (var task in _tasks)
+        {
+            Assert.IsTrue(task.IsCompleted);
+        }
+    }
 
     [Test]
     public void AggregateExceptionTest()
