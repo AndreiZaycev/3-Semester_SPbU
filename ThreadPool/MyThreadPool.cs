@@ -84,7 +84,7 @@ public class MyThreadPool
     /// <exception cref="ThreadPoolShutdownException">Cancellation was requested</exception>
     public IMyTask<TResult> Submit<TResult>(Func<TResult> supplier)
     {
-        lock (_actionQueueLocker)
+        lock (_cancellationTokenSource)
         {
             if (_cancellationTokenSource.IsCancellationRequested)
             {
@@ -133,7 +133,6 @@ public class MyThreadPool
         private TResult? _result;
         private Exception? _isAggregateExceptionThrown;
         private readonly ManualResetEvent _isResultReadyEvent = new(false);
-        private readonly object _continuationQueueLocker = new();
 
         /// <inheritdoc />
         public bool IsCompleted { get; private set; }
