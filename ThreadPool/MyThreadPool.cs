@@ -156,7 +156,6 @@ public class MyThreadPool
                     throw new AggregateException(_isAggregateExceptionThrown);
                 }
 
-                _isResultReadyEvent.Set();
                 return _result;
             }
         }
@@ -188,7 +187,7 @@ public class MyThreadPool
         /// <inheritdoc/>
         public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> supplier)
         {
-            lock (_continuationQueueLocker)
+            lock (_threadPool._cancellationTokenSource)
             {
                 if (_threadPool._cancellationTokenSource.IsCancellationRequested)
                 {
