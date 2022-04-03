@@ -202,6 +202,7 @@ public class MyThreadPool
                 else
                 {
                     _continuations.Add(task.Run);
+                    _threadPool._manualReset.Set();
                 }
 
                 return task;
