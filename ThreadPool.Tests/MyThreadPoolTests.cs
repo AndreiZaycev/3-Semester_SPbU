@@ -122,6 +122,7 @@ public class MyThreadPoolTests
     }
 
     [Test]
+    [NonParallelizable]
     public void MultiThreadingTest()
     {
         var anotherPool = new MyThreadPool(CountOfTasks);
