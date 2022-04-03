@@ -24,5 +24,14 @@ public class MyThreadPoolTests
                 _threadPool.Submit(() => index);
         }
     }
+
+    [Test]
+    public void IsCompletedTest()
+    {
+        foreach (var task in _tasks)
+        {
+            Assert.IsTrue(task.IsCompleted);
+        }
+    }
     
 }
