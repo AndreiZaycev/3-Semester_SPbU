@@ -156,6 +156,7 @@ public class MyThreadPool
                     throw new AggregateException(_isAggregateExceptionThrown);
                 }
 
+                _isResultReadyEvent.Set();
                 return _result;
             }
         }
