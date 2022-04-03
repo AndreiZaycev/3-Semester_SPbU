@@ -26,6 +26,7 @@ public class MyThreadPoolTests
     }
 
     [Test]
+    [NonParallelizable]
     public void IsCompletedTest()
     {
         foreach (var task in _tasks)
@@ -35,6 +36,7 @@ public class MyThreadPoolTests
     }
 
     [Test]
+    [NonParallelizable]
     public void AggregateExceptionTest()
     {
         var pool = new MyThreadPool(10);
