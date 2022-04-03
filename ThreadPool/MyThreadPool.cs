@@ -84,18 +84,15 @@ public class MyThreadPool
     /// <exception cref="ThreadPoolShutdownException">Cancellation was requested</exception>
     public IMyTask<TResult> Submit<TResult>(Func<TResult> supplier)
     {
-        lock (_actionQueueLocker)
+        if (_cancellationTokenSource.IsCancellationRequested)
         {
-            if (_cancellationTokenSource.IsCancellationRequested)
-            {
-                throw new ThreadPoolShutdownException();
-            }
-
-
-            var task = new MyTask<TResult>(supplier, this);
-            AddAction(task.Run);
-            return task;
+            throw new ThreadPoolShutdownException();
         }
+
+
+        var task = new MyTask<TResult>(supplier, this);
+        AddAction(task.Run);
+        return task;
     }
 
     /// <summary>

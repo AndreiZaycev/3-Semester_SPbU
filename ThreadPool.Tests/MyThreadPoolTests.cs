@@ -1,9 +1,8 @@
-﻿using System.Linq;
+﻿namespace ThreadPool.Tests;
+
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
-namespace ThreadPool.Tests;
-
 using System;
 using NUnit.Framework;
 
@@ -119,5 +118,51 @@ public class MyThreadPoolTests
         {
             var _ = new MyThreadPool(0);
         });
+    }
+
+    [Test]
+    [NonParallelizable]
+    public void MultiThreadingTest()
+    {
+        var anotherPool = new MyThreadPool(CountOfTasks);
+        var array = new int[CountOfTasks];
+
+        Parallel.ForEach(Enumerable.Range(0, CountOfTasks), i =>
+        {
+            var localIndex = i;
+            switch (i)
+            {
+                case 4:
+                    Thread.Sleep(5000);
+                    anotherPool.Shutdown();
+                    break;
+                case < 4:
+                    anotherPool.Submit(() => localIndex)
+                        .ContinueWith(_ =>
+                        {
+                            array[localIndex] = Interlocked.Increment(ref localIndex);
+                            return 1;
+                        });
+                    break;
+                default:
+                    Thread.Sleep(10000);
+                    Assert.Throws<ThreadPoolShutdownException>(() => { anotherPool.Submit(() => localIndex); });
+                    break;
+            }
+        });
+
+        Thread.Sleep(5000);
+
+        for (var i = 0; i < 4; ++i)
+        {
+            Assert.AreEqual(i + 1, array[i]);
+        }
+
+        foreach (var item in array)
+        {
+            Console.WriteLine(item);
+        }
+
+        Assert.AreEqual(0, array[4]);
     }
 }
