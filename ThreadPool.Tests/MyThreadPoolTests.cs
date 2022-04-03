@@ -26,7 +26,6 @@ public class MyThreadPoolTests
     }
 
     [Test]
-    [NonParallelizable]
     public void IsCompletedTest()
     {
         foreach (var task in _tasks)
@@ -36,15 +35,12 @@ public class MyThreadPoolTests
     }
 
     [Test]
-    [NonParallelizable]
-    public void AggregateExceptionTest()
+    public void SubmittedTasksShouldRaiseExceptionAfterShutdown()
     {
-        var pool = new MyThreadPool(10);
-        var task1 = pool.Submit(() => 0);
-        var task2 = task1.ContinueWith(j => 1 / j);
-        var task3 = task2.ContinueWith(j => j.ToString());
-
-        Assert.Throws<AggregateException>(() => _ = task2.Result);
-        Assert.Throws<AggregateException>(() => _ = task3.Result);
+        _threadPool.Shutdown();
+        for (var i = 0; i < CountOfTasks; i++)
+        {
+            Assert.Throws<ThreadPoolShutdownException>(() => _threadPool.Submit(() => 0));
+        }
     }
 }
