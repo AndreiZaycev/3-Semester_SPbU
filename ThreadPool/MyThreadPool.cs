@@ -39,16 +39,13 @@ public class MyThreadPool
     /// <exception cref="ThreadPoolShutdownException">Cancellation was requested</exception>
     private void AddAction(Action action)
     {
-        lock (_actionQueueLocker)
+        if (_cancellationTokenSource.Token.IsCancellationRequested)
         {
-            if (_cancellationTokenSource.IsCancellationRequested)
-            {
-                throw new ThreadPoolShutdownException();
-            }
-
-            _actions.Add(action);
-            _manualReset.Set();
+            throw new ThreadPoolShutdownException();
         }
+
+        _actions.Add(action);
+        _manualReset.Set();
     }
 
     /// <summary>
@@ -59,16 +56,23 @@ public class MyThreadPool
     {
         var thread = new Thread(() =>
         {
-            while (!_cancellationTokenSource.IsCancellationRequested)
+            while (!_cancellationTokenSource.Token.IsCancellationRequested)
             {
                 Action? task;
-
-                while (!_actions.TryTake(out task) && !_cancellationTokenSource.IsCancellationRequested)
+            
+                while (!_actions.TryTake(out task) && !_cancellationTokenSource.Token.IsCancellationRequested)
                 {
                     lock (_actionQueueLocker)
                     {
+                        if (_actions.TryTake(out var dedlockTask))
+                        {
+                            dedlockTask.Invoke();
+                            break;
+                        }
+                        
                         _manualReset.Reset();
                     }
+                    
                     _manualReset.WaitOne();
                 }
 
@@ -92,11 +96,10 @@ public class MyThreadPool
     {
         lock (_actionQueueLocker)
         {
-            if (_cancellationTokenSource.IsCancellationRequested)
+            if (_cancellationTokenSource.Token.IsCancellationRequested)
             {
                 throw new ThreadPoolShutdownException();
             }
-
 
             var task = new MyTask<TResult>(supplier, this);
             AddAction(task.Run);
@@ -112,16 +115,15 @@ public class MyThreadPool
     {
         lock (_actionQueueLocker)
         {
-            if (_cancellationTokenSource.IsCancellationRequested)
+            if (_cancellationTokenSource.Token.IsCancellationRequested)
             {
                 throw new ThreadPoolShutdownException();
             }
-
-
-            _cancellationTokenSource.Cancel();
-            _manualReset.Set();
         }
 
+        _cancellationTokenSource.Cancel();
+        _manualReset.Set();
+        
         foreach (var thread in _threads)
         {
             thread.Join();
@@ -195,7 +197,7 @@ public class MyThreadPool
         {
             lock (_threadPool._actionQueueLocker)
             {
-                if (_threadPool._cancellationTokenSource.IsCancellationRequested)
+                if (_threadPool._cancellationTokenSource.Token.IsCancellationRequested)
                 {
                     throw new ThreadPoolShutdownException();
                 }
