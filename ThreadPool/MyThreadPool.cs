@@ -39,13 +39,16 @@ public class MyThreadPool
     /// <exception cref="ThreadPoolShutdownException">Cancellation was requested</exception>
     private void AddAction(Action action)
     {
-        if (_cancellationTokenSource.IsCancellationRequested)
+        lock (_actionQueueLocker)
         {
-            throw new ThreadPoolShutdownException();
-        }
+            if (_cancellationTokenSource.IsCancellationRequested)
+            {
+                throw new ThreadPoolShutdownException();
+            }
 
-        _actions.Add(action);
-        _manualReset.Set();
+            _actions.Add(action);
+            _manualReset.Set();
+        }
     }
 
     /// <summary>
@@ -62,7 +65,10 @@ public class MyThreadPool
 
                 while (!_actions.TryTake(out task) && !_cancellationTokenSource.IsCancellationRequested)
                 {
-                    _manualReset.Reset();
+                    lock (_actionQueueLocker)
+                    {
+                        _manualReset.Reset();
+                    }
                     _manualReset.WaitOne();
                 }
 
@@ -111,13 +117,14 @@ public class MyThreadPool
                 throw new ThreadPoolShutdownException();
             }
 
+
             _cancellationTokenSource.Cancel();
             _manualReset.Set();
+        }
 
-            foreach (var thread in _threads)
-            {
-                thread.Join();
-            }
+        foreach (var thread in _threads)
+        {
+            thread.Join();
         }
     }
 
@@ -131,7 +138,7 @@ public class MyThreadPool
         private readonly MyThreadPool _threadPool;
         private Func<TResult>? _supplier;
         private TResult? _result;
-        private Exception? _isAggregateExceptionThrown;
+        private Exception? _aggregateException;
         private readonly ManualResetEvent _isResultReadyEvent = new(false);
 
         /// <inheritdoc />
@@ -150,9 +157,9 @@ public class MyThreadPool
             {
                 _isResultReadyEvent.WaitOne();
 
-                if (_isAggregateExceptionThrown != null)
+                if (_aggregateException != null)
                 {
-                    throw new AggregateException(_isAggregateExceptionThrown);
+                    throw new AggregateException(_aggregateException);
                 }
 
                 return _result;
@@ -172,7 +179,7 @@ public class MyThreadPool
             }
             catch (Exception exception)
             {
-                _isAggregateExceptionThrown = new AggregateException(exception);
+                _aggregateException = new AggregateException(exception);
             }
 
             _isResultReadyEvent.Set();
