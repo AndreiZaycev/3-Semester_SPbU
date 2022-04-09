@@ -208,19 +208,16 @@ public class MyThreadPool
                 }
 
                 var task = new MyTask<TNewResult>(() => supplier(Result!), _threadPool);
-                
-                lock (_lockObj)
+
+                if (IsCompleted)
                 {
-                    if (IsCompleted)
-                    {
-                        _threadPool.AddAction(task.Run);
-                    }
-                    else
-                    {
-                        _continuations.Add(task.Run);
-                    }
+                    _threadPool.AddAction(task.Run);
                 }
-                
+                else
+                {
+                    _continuations.Add(task.Run);
+                }
+
                 return task;
             }
         }
