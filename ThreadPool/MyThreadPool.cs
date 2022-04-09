@@ -141,6 +141,7 @@ public class MyThreadPool
         private Exception? _aggregateException;
         private readonly ManualResetEvent _isResultReadyEvent = new(false);
         private volatile bool _isCompleted;
+        private object _lockObj = new();
 
         /// <inheritdoc />
         public bool IsCompleted => _isCompleted;
@@ -208,15 +209,18 @@ public class MyThreadPool
 
                 var task = new MyTask<TNewResult>(() => supplier(Result!), _threadPool);
                 
-                if (IsCompleted)
+                lock (_lockObj)
                 {
-                    _threadPool.AddAction(task.Run);
+                    if (IsCompleted)
+                    {
+                        _threadPool.AddAction(task.Run);
+                    }
+                    else
+                    {
+                        _continuations.Add(task.Run);
+                    }
                 }
-                else
-                {
-                    _continuations.Add(task.Run);
-                }
-
+                
                 return task;
             }
         }
