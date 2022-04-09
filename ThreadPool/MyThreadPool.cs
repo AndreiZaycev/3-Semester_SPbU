@@ -187,14 +187,15 @@ public class MyThreadPool
                 _aggregateException = new AggregateException(exception);
             }
             _isResultReadyEvent.Set();
-
+            lock (_lockObj)
+            {
                 while (_continuations.Count != 0)
                 {
                     _threadPool._actions.Add(_continuations.Take());
                 }
 
                 _isResultReadyEvent.Set();
-            
+            }
         }
 
         /// <inheritdoc/>
@@ -207,17 +208,23 @@ public class MyThreadPool
                     throw new ThreadPoolShutdownException();
                 }
 
-                var task = new MyTask<TNewResult>(() => supplier(Result!), _threadPool);
-
-                if (IsCompleted)
+                if (_aggregateException != null)
                 {
-                    _threadPool.AddAction(task.Run);
-                }
-                else
-                {
-                    _continuations.Add(task.Run);
+                    throw _aggregateException;
                 }
                 
+                var task = new MyTask<TNewResult>(() => supplier(Result!), _threadPool);
+                lock (_lockObj)
+                {
+                    if (IsCompleted)
+                    {
+                        _threadPool.AddAction(task.Run);
+                    }
+                    else
+                    {
+                        _continuations.Add(task.Run);
+                    }
+                }
 
                 return task;
             }
