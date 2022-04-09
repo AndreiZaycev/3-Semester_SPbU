@@ -38,13 +38,16 @@ public class MyThreadPool
     /// <exception cref="ThreadPoolShutdownException">Cancellation was requested</exception>
     private void AddAction(Action action)
     {
-        if (_cancellationTokenSource.Token.IsCancellationRequested)
+        lock (_cancellationTokenSource)
         {
-            throw new ThreadPoolShutdownException();
+            if (_cancellationTokenSource.Token.IsCancellationRequested)
+            {
+                throw new ThreadPoolShutdownException();
+            }
+    
+            _actions.Add(action);
+            _manualReset.Set();
         }
-
-        _actions.Add(action);
-        _manualReset.Set();
     }
 
     /// <summary>
