@@ -37,7 +37,7 @@ public class MyThreadPoolTests
         var task3 = task2.ContinueWith(j => j.ToString());
 
         Assert.Throws<AggregateException>(() => _ = task2.Result);
-        Assert.Throws<AggregateException>(() => _ = task3.Result);
+        
     }
 
 
