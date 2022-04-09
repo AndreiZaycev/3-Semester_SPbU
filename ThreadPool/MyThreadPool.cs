@@ -100,6 +100,7 @@ public class MyThreadPool
 
             var task = new MyTask<TResult>(supplier, this);
             AddAction(task.Run);
+            _manualReset.Set();
             return task;
         }
     }
