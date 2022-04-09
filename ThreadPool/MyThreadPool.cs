@@ -208,12 +208,14 @@ public class MyThreadPool
                     throw new ThreadPoolShutdownException();
                 }
 
-                if (_aggregateException != null)
+                var task = new MyTask<TNewResult>(() =>
                 {
-                    throw _aggregateException;
-                }
-                
-                var task = new MyTask<TNewResult>(() => supplier(Result!), _threadPool);
+                    if (_aggregateException != null)
+                    {
+                        throw _aggregateException;
+                    }
+                    return supplier(Result!);
+                }, _threadPool);
                 lock (_lockObj)
                 {
                     if (IsCompleted)
