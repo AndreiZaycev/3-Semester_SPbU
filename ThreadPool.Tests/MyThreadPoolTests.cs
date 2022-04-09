@@ -16,6 +16,7 @@ public class MyThreadPoolTests
     [SetUp]
     public void Setup()
     {
+        Console.Write("Setup tut");
         _threadPool = new MyThreadPool(CountOfTasks);
         for (var i = 0; i < CountOfTasks; i++)
         {
