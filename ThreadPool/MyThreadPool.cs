@@ -12,7 +12,6 @@ public class MyThreadPool
 {
     private readonly BlockingCollection<Action> _actions = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private readonly object _actionQueueLocker = new();
     private readonly ManualResetEvent _manualReset = new(false);
     private readonly Thread[] _threads;
 
@@ -59,14 +58,13 @@ public class MyThreadPool
             while (!_cancellationTokenSource.Token.IsCancellationRequested)
             {
                 Action? task;
-            
+
                 while (!_actions.TryTake(out task) && !_cancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    lock (_actionQueueLocker)
+                    lock (_cancellationTokenSource)
                     {
-                        if (_actions.TryTake(out var dedlockTask))
+                        if (_actions.TryTake(out task))
                         {
-                            dedlockTask.Invoke();
                             break;
                         }
                         
@@ -94,7 +92,7 @@ public class MyThreadPool
     /// <exception cref="ThreadPoolShutdownException">Cancellation was requested</exception>
     public IMyTask<TResult> Submit<TResult>(Func<TResult> supplier)
     {
-        lock (_actionQueueLocker)
+        lock (_cancellationTokenSource)
         {
             if (_cancellationTokenSource.Token.IsCancellationRequested)
             {
@@ -113,16 +111,16 @@ public class MyThreadPool
     /// <exception cref="ThreadPoolShutdownException">Cancellation already was requested</exception>
     public void Shutdown()
     {
-        lock (_actionQueueLocker)
+        lock (_cancellationTokenSource)
         {
             if (_cancellationTokenSource.Token.IsCancellationRequested)
             {
                 throw new ThreadPoolShutdownException();
             }
+            
+            _cancellationTokenSource.Cancel();
+            _manualReset.Set();
         }
-
-        _cancellationTokenSource.Cancel();
-        _manualReset.Set();
         
         foreach (var thread in _threads)
         {
@@ -142,9 +140,10 @@ public class MyThreadPool
         private TResult? _result;
         private Exception? _aggregateException;
         private readonly ManualResetEvent _isResultReadyEvent = new(false);
+        private volatile bool _isCompleted;
 
         /// <inheritdoc />
-        public bool IsCompleted { get; private set; }
+        public bool IsCompleted => _isCompleted;
 
         public MyTask(Func<TResult> supplier, MyThreadPool threadPool)
         {
@@ -176,7 +175,7 @@ public class MyThreadPool
             try
             {
                 _result = _supplier!();
-                IsCompleted = true;
+                _isCompleted = true;
                 _supplier = null;
             }
             catch (Exception exception)
@@ -195,7 +194,7 @@ public class MyThreadPool
         /// <inheritdoc/>
         public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> supplier)
         {
-            lock (_threadPool._actionQueueLocker)
+            lock (_threadPool._cancellationTokenSource)
             {
                 if (_threadPool._cancellationTokenSource.Token.IsCancellationRequested)
                 {
