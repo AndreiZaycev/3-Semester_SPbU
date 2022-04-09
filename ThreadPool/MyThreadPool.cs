@@ -166,7 +166,7 @@ public class MyThreadPool
                 {
                     throw new AggregateException(_aggregateException);
                 }
-                
+
                 return _result;
             }
         }
