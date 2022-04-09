@@ -183,11 +183,14 @@ public class MyThreadPool
                 _aggregateException = new AggregateException(exception);
             }
 
-            _isResultReadyEvent.Set();
-
-            while (_continuations.Count != 0)
+            lock (_threadPool._cancellationTokenSource)
             {
-                _threadPool._actions.Add(_continuations.Take());
+                 _isResultReadyEvent.Set();
+                
+                while (_continuations.Count != 0)
+                {
+                    _threadPool._actions.Add(_continuations.Take());
+                }
             }
         }
 
@@ -202,7 +205,7 @@ public class MyThreadPool
                 }
 
                 var task = new MyTask<TNewResult>(() => supplier(Result!), _threadPool);
-
+                
                 if (IsCompleted)
                 {
                     _threadPool.AddAction(task.Run);
