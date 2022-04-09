@@ -70,7 +70,6 @@ public class MyThreadPool
                         
                         _manualReset.Reset();
                     }
-                    Console.WriteLine("73 ZDAROVA");
                     _manualReset.WaitOne();
                 }
 
@@ -156,7 +155,6 @@ public class MyThreadPool
         {
             get
             {
-                Console.WriteLine("159 Hello");
                 _isResultReadyEvent.WaitOne();
 
                 if (_aggregateException != null)

@@ -16,7 +16,6 @@ public class MyThreadPoolTests
     [SetUp]
     public void Setup()
     {
-        Console.Write("Setup tut");
         _threadPool = new MyThreadPool(CountOfTasks);
         for (var i = 0; i < CountOfTasks; i++)
         {
@@ -25,7 +24,7 @@ public class MyThreadPoolTests
                 _threadPool.Submit(() => index);
         }
     }
-    
+
     [Test]
     public void AggregateExceptionTest()
     {
@@ -36,5 +35,8 @@ public class MyThreadPoolTests
 
         Assert.Throws<AggregateException>(() => _ = task2.Result);
         Assert.Throws<AggregateException>(() => _ = task3.Result);
+        pool.Shutdown();
+        _threadPool.Shutdown();
     }
+
 }
