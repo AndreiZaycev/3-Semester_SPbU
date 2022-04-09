@@ -46,14 +46,7 @@ public class MyThreadPoolTests
         Assert.Throws<AggregateException>(() => _ = task3.Result);
     }
 
-    [Test]
-    public void ThreadPoolShouldCalculateTasks()
-    {
-        for (var i = 0; i < CountOfTasks; i++)
-        {
-            Assert.AreEqual(i, _tasks[i].Result);
-        }
-    }
+
     
 
 }
