@@ -65,14 +65,4 @@ public class MyThreadPoolTests
         }
     }
 
-    [Test]
-    public void ContinueWithTasksShouldRaiseExceptionAfterShutdown()
-    {
-        _threadPool.Shutdown();
-        for (var i = 0; i < CountOfTasks; i++)
-        {
-            Assert.Throws<ThreadPoolShutdownException>(() => _tasks[i].ContinueWith(_ => 0));
-        }
-    }
-    
 }
