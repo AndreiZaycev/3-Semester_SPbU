@@ -32,6 +32,7 @@ public class MyThreadPoolTests
     {
         var pool = new MyThreadPool(10);
         var task1 = pool.Submit(() => 0);
+        
         var task2 = task1.ContinueWith(j => 1 / j);
         var task3 = task2.ContinueWith(j => j.ToString());
 
