@@ -1,8 +1,8 @@
 ﻿namespace ThreadPool.Tests;
+
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
 using System;
 using NUnit.Framework;
 
@@ -35,16 +35,6 @@ public class MyThreadPoolTests
     }
 
     [Test]
-    public void AggregateExceptionTest()
-    {
-        var pool = new MyThreadPool(10);
-        var task1 = pool.Submit(() => 0);
-        var task2 = task1.ContinueWith(j => 1 / j);
-
-        Assert.Throws<AggregateException>(() => _ = task2.Result);
-    }
-
-    [Test]
     public void ThreadPoolShouldCalculateTasks()
     {
         for (var i = 0; i < CountOfTasks; i++)
@@ -61,6 +51,16 @@ public class MyThreadPoolTests
         {
             Assert.Throws<ThreadPoolShutdownException>(() => _threadPool.Submit(() => 0));
         }
+    }
+
+    [Test]
+    public void AggregateExceptionTest()
+    {
+        var pool = new MyThreadPool(10);
+        var task1 = pool.Submit(() => 0);
+        var task2 = task1.ContinueWith(j => 1 / j);
+
+        Assert.Throws<AggregateException>(() => _ = task2.Result);
     }
 
     [Test]
@@ -144,14 +144,11 @@ public class MyThreadPoolTests
                     break;
                 default:
                     Thread.Sleep(10000);
-                    Assert.Throws<ThreadPoolShutdownException>(() =>
-                    {
-                        anotherPool.Submit(() => localIndex);
-                    });
+                    Assert.Throws<ThreadPoolShutdownException>(() => { anotherPool.Submit(() => localIndex); });
                     break;
             }
         });
-        
+
         Thread.Sleep(5000);
 
         for (var i = 0; i < 4; ++i)

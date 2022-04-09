@@ -44,7 +44,7 @@ public class MyThreadPool
             {
                 throw new ThreadPoolShutdownException();
             }
-    
+
             _actions.Add(action);
             _manualReset.Set();
         }
@@ -70,9 +70,10 @@ public class MyThreadPool
                         {
                             break;
                         }
-                        
+
                         _manualReset.Reset();
                     }
+
                     _manualReset.WaitOne();
                 }
 
@@ -120,11 +121,11 @@ public class MyThreadPool
             {
                 throw new ThreadPoolShutdownException();
             }
-            
+
             _cancellationTokenSource.Cancel();
             _manualReset.Set();
         }
-        
+
         foreach (var thread in _threads)
         {
             thread.Join();
@@ -144,7 +145,7 @@ public class MyThreadPool
         private Exception? _aggregateException;
         private readonly ManualResetEvent _isResultReadyEvent = new(false);
         private volatile bool _isCompleted;
-        private object _lockObj = new();
+        private readonly object _lockObj = new();
 
         /// <inheritdoc />
         public bool IsCompleted => _isCompleted;
@@ -166,7 +167,7 @@ public class MyThreadPool
                 {
                     throw new AggregateException(_aggregateException);
                 }
-                
+
                 return _result;
             }
         }
@@ -186,7 +187,9 @@ public class MyThreadPool
             {
                 _aggregateException = new AggregateException(exception);
             }
+
             _isResultReadyEvent.Set();
+            
             lock (_lockObj)
             {
                 while (_continuations.Count != 0)
@@ -214,8 +217,10 @@ public class MyThreadPool
                     {
                         throw _aggregateException;
                     }
+
                     return supplier(Result!);
                 }, _threadPool);
+                
                 lock (_lockObj)
                 {
                     if (IsCompleted)
