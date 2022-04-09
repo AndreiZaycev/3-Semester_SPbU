@@ -54,15 +54,6 @@ public class MyThreadPoolTests
             Assert.AreEqual(i, _tasks[i].Result);
         }
     }
-
-    [Test]
-    public void SubmittedTasksShouldRaiseExceptionAfterShutdown()
-    {
-        _threadPool.Shutdown();
-        for (var i = 0; i < CountOfTasks; i++)
-        {
-            Assert.Throws<ThreadPoolShutdownException>(() => _threadPool.Submit(() => 0));
-        }
-    }
+    
 
 }
