@@ -167,6 +167,7 @@ public class MyThreadPool
                     throw new AggregateException(_aggregateException);
                 }
 
+                _isResultReadyEvent.Set();
                 return _result;
             }
         }
