@@ -191,6 +191,8 @@ public class MyThreadPool
                 {
                     _threadPool._actions.Add(_continuations.Take());
                 }
+
+                _isResultReadyEvent.Set();
             }
         }
 
